@@ -11,7 +11,14 @@ int maxDepth = 6000;
 int minZ = -1000;
 int maxZ = 1000;
 
-//vector functions
+/**
+ * Converts a given depth pixel into 3D coordinates.
+ *
+ * @param Pointer to the vector
+ * @param x coordinate on the depth map
+ * @param y coordinate on the depth map
+ * @param Depth value on the depth map
+ */
 void vec4DFromDepth(TVec4D* vec, float xs, float ys, float depth){
 	//converting depth to (x, y, z)
 	depth += 280;
@@ -23,6 +30,12 @@ void vec4DFromDepth(TVec4D* vec, float xs, float ys, float depth){
 	vec->w = 1;
 }
 
+/**
+ * Returns the distance between 2 vectors only taking into account the x and y coordinates.
+ *
+ * @param Pointer to the first vector
+ * @param Pointer to the second vector
+ */
 float vec2DDistance(const TVec4D* v1, const TVec4D* v2){
 	float dx, dy;
 	dx = v1->x - v2->x;
@@ -30,6 +43,12 @@ float vec2DDistance(const TVec4D* v1, const TVec4D* v2){
 	return sqrt(dx*dx + dy*dy);
 }
 
+/**
+ * Returns the distance between 2 vectors only taking into account the x, y, and z coordinates.
+ *
+ * @param Pointer to the first vector
+ * @param Pointer to the second vector
+ */
 float vec3DDistance(const TVec4D* v1, const TVec4D* v2){
 	float dx, dy, dz;
 	dx = v1->x - v2->x;
@@ -38,11 +57,20 @@ float vec3DDistance(const TVec4D* v1, const TVec4D* v2){
 	return sqrt(dx*dx + dy*dy + dz*dz);
 }
 
+/**
+ * Returns the distance between 2 vectors only taking into account the z coordinates.
+ * The result is the absolute value of the difference between both z values.
+ *
+ * @param Pointer to the first vector
+ * @param Pointer to the second vector
+ */
 float vecHeightDifference(const TVec4D* v1, const TVec4D* v2){
     return v1->z>=v2->z? v1->z-v2->z : v2->z-v1->z;
 }
 
-//matrix functions
+/**
+ * Returns a new identity matrix.
+ */
 TMatrix4D* matrix4DIdentity(){
 	//Allocation of space for the matrix
 	TMatrix4D* matr = NULL;
@@ -63,6 +91,15 @@ TMatrix4D* matrix4DIdentity(){
 	return matr;
 }
 
+/**
+ * Returns a new transformation matrix.
+ * The transformation performs a rotation around the Z axis and a translation.
+ *
+ * @param x value of translation
+ * @param y value of translation
+ * @param z value of translation
+ * @param Angle of rotation in radians.
+ */
 TMatrix4D* matrix4DTranslationRotationZ(float x, float y, float z, float angle){
 	//Allocation of space for the matrix
 	TMatrix4D* matr = NULL;
@@ -89,6 +126,12 @@ TMatrix4D* matrix4DTranslationRotationZ(float x, float y, float z, float angle){
 	return matr;
 }
 
+/**
+ * Applies a transformation matrix to a vector.
+ *
+ * @param Pointer to the vector
+ * @param Pointer to the matrix
+ */
 void transformVec4D(TVec4D* vec, const TMatrix4D* matr){
 	float nx, ny, nz, nw;
 	nx = vec->x*matr->m[0] + vec->y*matr->m[1] + vec->z*matr->m[2] + vec->w*matr->m[3];
@@ -101,6 +144,12 @@ void transformVec4D(TVec4D* vec, const TMatrix4D* matr){
 	vec->w = nw;
 }
 
+/**
+ * Creates a 4x4 matrix from a list of 4 vectors.
+ *
+ * @param Pointer to the matrix
+ * @param Pointer to the vector list
+ */
 void matrix4DGetFromVectors(TMatrix4D* m, const TVec4D* vectors){
     int i;
     for(i=0; i<4; i++){
@@ -111,6 +160,13 @@ void matrix4DGetFromVectors(TMatrix4D* m, const TVec4D* vectors){
     }
 }
 
+/**
+ * Multiplies 2 matrices.
+ *
+ * @param Pointer to the matrix which will contain the result of the multiplication
+ * @param Pointer to the first matrix
+ * @param Pointer to the second matrix
+ */
 void matrix4DMultiply(TMatrix4D* result, const TMatrix4D* m1, const TMatrix4D* m2){
     int i, j, k;
     for(i=0; i<4; i++){
@@ -123,6 +179,13 @@ void matrix4DMultiply(TMatrix4D* result, const TMatrix4D* m1, const TMatrix4D* m
     }
 }
 
+/**
+ * Returns the cofactor of a matrix at given (x,y) coordinates.
+ *
+ * @param Pointer to the matrix
+ * @param x coordinate of the cofactor
+ * @param y coordinate of the cofactor
+ */
 float matrix4DCofactor(const TMatrix4D* m, int x, int y){
     float subM[9];
     int i, j, k=0, l=0;
@@ -140,6 +203,13 @@ float matrix4DCofactor(const TMatrix4D* m, int x, int y){
     return subM[0]*subM[4]*subM[8] + subM[1]*subM[5]*subM[6] + subM[2]*subM[3]*subM[7] - subM[2]*subM[4]*subM[6] - subM[1]*subM[3]*subM[8] - subM[0]*subM[5]*subM[7];
 }
 
+/**
+ * Inverts a matrix.
+ * Returns 0 if inversion is a success and 1 if inversion is not possible.
+ *
+ * @param Pointer to the inverted matrix
+ * @param Pointer to the matrix to invert
+ */
 int matrix4DInvert(TMatrix4D* invert, const TMatrix4D* m){
     int i, j;
     float det = 0;
@@ -162,26 +232,59 @@ int matrix4DInvert(TMatrix4D* invert, const TMatrix4D* m){
 	return 0;
 }
 
-//camera functions
+/**
+ * Creates a primary camera.
+ * A primary camera has an identity matrix as a base.
+ *
+ * @param Pointer to the camera
+ * @param ID of the camera
+ */
 void createPrimaryCamera(TDepthCamera* pCamera, int id){
 	pCamera->id = id;
 	pCamera->base = matrix4DIdentity();
 }
 
+/**
+ * Creates a secondary camera.
+ * A secondary camera has a transformation matrix as a base.
+ *
+ * @param Pointer to the camera
+ * @param ID of the camera
+ * @param x value of translation
+ * @param y value of translation
+ * @param z value of translation
+ * @param Angle of rotation in radians.
+ */
 void createSecondaryCamera(TDepthCamera* pCamera, int id, float x, float y, float z, float angle){
 	pCamera->id = id;
 	pCamera->base = matrix4DTranslationRotationZ(x, y, z, angle);
 }
 
+/**
+ * Refreshes the depth map of a camera.
+ *
+ * @param Pointer to the camera
+ * @param Pointer to the time stamp
+ */
 int updateCamera(TDepthCamera* pCamera, unsigned int* timestamp){
 	return freenect_sync_get_depth((void**)(&(pCamera->data)), timestamp, pCamera->id, FREENECT_DEPTH_REGISTERED);
 }
 
+/**
+ * Frees a camera.
+ * Well actually, it only frees the base matrix if the camera.
+ *
+ * @param Pointer to the camera
+ */
 void freeCamera(TDepthCamera* pCamera){
 	free(pCamera->base);
 }
 
-//vector list functions
+/**
+ * Empties a vector list and resets the weight of all vectors to 1.
+ *
+ * @param Pointer to the vector list
+ */
 void resetVecList(TVecList* list){
 	list->n = 0;
 	int i;
@@ -194,6 +297,16 @@ void resetVecList(TVecList* list){
 	}
 }
 
+/**
+ * Adds a vector to a list if there is enough space.
+ * If the vector is close enough to another in the list, both vectors will be fused instead.
+ *
+ * @param Pointer to the vector list
+ * @param Pointer to the vector
+ * @param Weight of the vector
+ * @param Tolerance for fusing two vectors
+ * @param Function used to determine the distance between two vectors
+ */
 int addVecToList(TVecList* list, const TVec4D* vec, int weight, float tolerance, float vecDistance(const TVec4D*, const TVec4D*)){
 	//compare with all existing vectors
 	int i, fuse = 0;
@@ -230,6 +343,13 @@ int addVecToList(TVecList* list, const TVec4D* vec, int weight, float tolerance,
 	return fuse;
 }
 
+/**
+ * Copies the vector with the highest weight in a list.
+ * Returns 1 if the list is empty and 0 if the operation is a success.
+ *
+ * @param Pointer to the vector
+ * @param Pointer to the vector list
+ */
 int getMaxVectorFromList(TVec4D* v, TVecList* list){
     if(list->n == 0){ return 1; }
     int i, max = 0;
@@ -243,6 +363,12 @@ int getMaxVectorFromList(TVec4D* v, TVecList* list){
     return 0;
 }
 
+/**
+ * Returns the address of the vector with the highest weight.
+ * Returns NULL if the list is empty.
+ *
+ * @param Pointer to the vector list
+ */
 TVec4D* maxPointList(TVecList* list){
     int maxId = 0, i;
     if(list->n==0){
@@ -256,7 +382,15 @@ TVec4D* maxPointList(TVecList* list){
     return &(list->vector[maxId]);
 }
 
-//data analysis functions
+/**
+ * Processes a depth map to generate a list of vectors.
+ * The number of iterations can be changed with the global variable nbIterations.
+ * Returns 0 if the operation is a success and 1 in case of a failure.
+ *
+ * @param Pointer to the depth map
+ * @param Pointer to the vector list
+ * @param Function used to determine the distance between two vectors
+ */
 int detectDrone(short* data, TVecList* list, float vecDistance(const TVec4D*, const TVec4D*)){
     //if data or list missing, error
     if(data == NULL || list == NULL){ return 1; }
@@ -271,7 +405,7 @@ int detectDrone(short* data, TVecList* list, float vecDistance(const TVec4D*, co
         if(data[pixelPos]>minDepth && data[pixelPos]<maxDepth){
             //convert to a vector
             vec4DFromDepth(&tmpVector, pixelPos%640, pixelPos/640, data[pixelPos]);
-            //if the z componant is between a min and max...
+            //if the z component is between a min and max...
             if(tmpVector.z > minZ && tmpVector.z < maxZ){
                 //add vector to list
                 addVecToList(list, &tmpVector, 1, 300, vecDistance);
@@ -282,6 +416,15 @@ int detectDrone(short* data, TVecList* list, float vecDistance(const TVec4D*, co
     return 0;
 }
 
+/**
+ * Adds all the vectors of the second list to the first list.
+ * If two vectors are close enough the are fused.
+ *
+ * @param Pointer to the first vector list
+ * @param Pointer to the second vector list
+ * @param Tolerance for fusing two vectors
+ * @param Function used to determine the distance between two vectors
+ */
 int fusePointList(TVecList* mainList, const TVecList* secList, float tolerance, float vecDistance(const TVec4D*, const TVec4D*)){
     int i, err, ret = 0;
     for(i=0; i<secList->n; i++){
@@ -289,7 +432,6 @@ int fusePointList(TVecList* mainList, const TVecList* secList, float tolerance, 
         if(err == 1){
             ret = 1;
         }else if(err == -1){
-int simplifyPointList(TVecList* list, float tolerance, float vecDistance(const TVec4D*, const TVec4D*));
             ret = -1;
             break;
         }
@@ -297,6 +439,13 @@ int simplifyPointList(TVecList* list, float tolerance, float vecDistance(const T
     return ret;
 }
 
+/**
+ * Fuses vectors within a same list if they are close enough.
+ *
+ * @param Pointer to the vector list
+ * @param Tolerance for fusing two vectors
+ * @param Function used to determine the distance between two vectors
+ */
 int __simplifyPointList(TVecList* list, float tolerance, float vecDistance(const TVec4D*, const TVec4D*)){
     int i, j, ret = 0;
     for(i=0; i<list->n; i++){
@@ -331,6 +480,13 @@ int __simplifyPointList(TVecList* list, float tolerance, float vecDistance(const
     return ret;
 }
 
+/**
+ * Applies the function __simplifyPointList until no more fusions are possible.
+ *
+ * @param Pointer to the vector list
+ * @param Tolerance for fusing two vectors
+ * @param Function used to determine the distance between two vectors
+ */
 int simplifyPointList(TVecList* list, float tolerance, float vecDistance(const TVec4D*, const TVec4D*)){
     int ret = 0;
     do{
@@ -338,11 +494,20 @@ int simplifyPointList(TVecList* list, float tolerance, float vecDistance(const T
     }while(ret == 1);
 }
 
-//display functions
+/**
+ * Displays the (x,y,z,w) coordinates of a vector.
+ *
+ * @param Pointer to the vector
+ */
 void displayVec4(const TVec4D* v){
 	printf("x:%3.2f, y:%3.2f, z:%3.2f, w:%3.2f", v->x, v->y, v->z, v->w);
 }
 
+/**
+ * Displays a matrix.
+ *
+ * @param Pointer to the vector
+ */
 void displayMatrix4(const TMatrix4D* m){
     printf("[[\t%3.5f\t%3.5f\t%3.5f\t%3.5f\t]\n", m->m[0], m->m[1], m->m[2], m->m[3]);
     printf(" [\t%3.5f\t%3.5f\t%3.5f\t%3.5f\t]\n", m->m[4], m->m[5], m->m[6], m->m[7]);
@@ -350,9 +515,16 @@ void displayMatrix4(const TMatrix4D* m){
     printf(" [\t%3.5f\t%3.5f\t%3.5f\t%3.5f\t]]\n", m->m[12], m->m[13], m->m[14], m->m[15]);
 }
 
+/**
+ * Displays all the vectors of a vector list.
+ *
+ * @param Pointer to the vector
+ */
 void displayVecList(const TVecList* list){
 	int i;
+	//displays the number of vectors
 	printf("Vectors:%d\n", list->n);
+	//displays each vector
 	for(i=0; i<list->n; i++){
 		printf("Weight:%d, ", list->weight[i]);
 		displayVec4(&(list->vector[i]));

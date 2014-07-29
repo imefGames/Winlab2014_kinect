@@ -1,4 +1,3 @@
-// Be sure to link with -lfreenect_sync -lm -pthread
 #include <stdlib.h>
 #include <stdio.h>
 #include <arpa/inet.h>
@@ -17,9 +16,7 @@
 #define PORT 5005
 
 ///prototypes
-//packet
 void writePacket(char* packet, char type, short data1, short data2, short data3);
-//thread
 void *readAsync(void *threadid);
 
 ///global variables
@@ -28,12 +25,12 @@ int contLoop;
 ///functions
 int main(int argc, char* argv[])
 {
-	//input parametres
+	//input parameters
 	if(argc != 2){
 		printf("usage: %s <ip>\n", argv[0]);
         return EXIT_FAILURE;
 	}
-	//set kinect angles to 0° & set LED color
+	//set Kinect angles to 0° & set LED colour
 	if(freenect_sync_set_tilt_degs(0, 0)){
         printf("Could not tilt device 0.\n");
         return EXIT_FAILURE;
@@ -69,6 +66,7 @@ int main(int argc, char* argv[])
 	TDepthCamera mainCam, secCam;
 	createPrimaryCamera(&mainCam, 0);
 	createPrimaryCamera(&secCam, 1);
+	//get calibration values acquired by calibration program.
 	FILE* pFile = NULL;
 	pFile = fopen("calibrationValues.cal", "r");
 	if(pFile == NULL){
@@ -102,7 +100,7 @@ int main(int argc, char* argv[])
 	}
 	//main loop
 	while(contLoop){
-		//acquire data for main kinect & process data
+		//acquire data for main Kinect & process data
 		if(updateCamera(&mainCam, &timestamp)){
             printf("Could not update feed for device 0.");
             return EXIT_FAILURE;
@@ -111,7 +109,7 @@ int main(int argc, char* argv[])
             printf("Could not process data for for device 0.");
             return EXIT_FAILURE;
 		}
-		//acquire data for secondary kinect & process data
+		//acquire data for secondary Kinect & process data
 		if(updateCamera(&secCam, &timestamp)){
             printf("Could not update feed for device 1.");
             return EXIT_FAILURE;
@@ -132,8 +130,7 @@ int main(int argc, char* argv[])
 		system("clear");
 		puts("Press Enter to exit.\n\n---------------\nLIST:");
 		displayVecList(&mainList);
-		//send command to drone
-		//send position to unity3D
+		//send position to the given IP address
 		TVec4D* maxVect = maxPointList(&mainList);
 		if(maxVect != NULL){
             writePacket(buf, 'k', maxVect->x, maxVect->y, maxVect->z);
@@ -155,7 +152,16 @@ int main(int argc, char* argv[])
 	return EXIT_SUCCESS;
 }
 
-//packet
+/**
+ * Writes data to a packet which will then be sent via the UDP socket.
+ * A 8 bit checksum is written at the end of the packet.
+ *
+ * @param Pointer to the packet. The packet must be at least 8 bytes long.
+ * @param Type of data transmitted.
+ * @param First variable to transmit.
+ * @param Second variable to transmit.
+ * @param Third variable to transmit.
+ */
 void writePacket(char* packet, char type, short data1, short data2, short data3){
 	int i;
 	char crc8 = type;
@@ -169,7 +175,11 @@ void writePacket(char* packet, char type, short data1, short data2, short data3)
 	packet[7] = crc8;
 }
 
-//thread
+/**
+ * Function executed in a thread to asynchronously end the infinite loop.
+ *
+ * @param Pointer to the thread arguments.
+ */
 void *readAsync(void *threadid)
 {
    getchar();

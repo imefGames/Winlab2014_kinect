@@ -1,4 +1,3 @@
-// Be sure to link with -lfreenect_sync -lm
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -25,8 +24,9 @@ int main()
        	printf("Could not change LED of device 1.\n");
         return EXIT_FAILURE;
 	}
-	//set cameras
+	//increase precision for detection
 	nbIterations = 200000;
+	//set cameras
 	TDepthCamera mainCam, secCam;
 	createPrimaryCamera(&mainCam, 0);
 	createPrimaryCamera(&secCam, 1);
@@ -43,10 +43,11 @@ int main()
 			puts("Calibration:\nStep 1: Environment\nPlace the Kinects at the desired locations.\nBe careful that nothing is within view of both devices.\n\n");
 		    puts("Press any key when you wish to capture the environment.\n");
 		    getchar();
-		    //get the depth map + get floor and ceiling
+		    //get the depth map + get floor and ceiling for main camera
 		    int i;
 		    updateCamera(&mainCam, &timestamp);
 		    detectDrone(mainCam.data, &mainList, &vecHeightDifference);
+			//for all points in main list, check if max or min.
 		    for(i=0; i<mainList.n; i++){
                 if(mainList.vector[i].z >= 0){
                     if(mainList.vector[i].z < maxZ){
@@ -58,8 +59,10 @@ int main()
                     }
                 }
 		    }
+			//get the depth map + get floor and ceiling for secondary camera
 		    updateCamera(&secCam, &timestamp);
 		    detectDrone(secCam.data, &secList, &vecHeightDifference);
+			//for all points in secondary list, check if max or min.
 		    for(i=0; i<secList.n; i++){
                 if(secList.vector[i].z >= 0){
                     if(secList.vector[i].z < maxZ){
@@ -71,12 +74,14 @@ int main()
                     }
                 }
 		    }
-		    puts("\nEnvironment captured.\n");
 		    //display values
+		    puts("\nEnvironment captured.\n");
 		    printf("Ceiling: %d, Floor: %d\n\n", maxZ, minZ);
+			//suggest new capture
 		    puts("\nCapture again? [Y/N] ");
 		    k = getchar();
 		}while(k == 'y' || k == 'Y');
+		//adjust min and max for safety
 		minZ += 100;
 		maxZ -= 100;
 		//capture point 0
@@ -92,7 +97,7 @@ int main()
 		    updateCamera(&secCam, &timestamp);
 		    detectDrone(secCam.data, &secList, &vec2DDistance);
 		    puts("\nEnvironment captured.\n");
-		    //display values
+		    //extract most significant point + display values
 		    if(getMaxVectorFromList(&(mainPoints[0]), &mainList)){
                 puts("Failed to acquire a point for main camera.\n");
 		    }else{
@@ -105,6 +110,7 @@ int main()
                 puts("\n\nsec P0:");
                 displayVec4(&(secPoints[0]));
 		    }
+			//suggest new capture
 		    puts("\nCapture again? [Y/N] ");
 		    k = getchar();
 		}while(k == 'y' || k == 'Y');
@@ -120,7 +126,7 @@ int main()
 		    updateCamera(&secCam, &timestamp);
 		    detectDrone(secCam.data, &secList, &vec2DDistance);
 		    puts("\nEnvironment captured.\n");
-		    //display values
+		    //extract most significant point + display values
 		    if(getMaxVectorFromList(&(mainPoints[1]), &mainList)){
                 puts("Failed to acquire a point for main camera.\n");
 		    }else{
@@ -133,7 +139,7 @@ int main()
                 puts("\n\nsec P1:");
                 displayVec4(&(secPoints[1]));
 		    }
-		    //display values
+		    //suggest new capture
 		    puts("\nCapture again? [Y/N] ");
 		    k = getchar();
 		}while(k == 'y' || k == 'Y');
@@ -149,7 +155,7 @@ int main()
 		    updateCamera(&secCam, &timestamp);
 		    detectDrone(secCam.data, &secList, &vec2DDistance);
 		    puts("\nEnvironment captured.\n");
-		    //display values
+		    //extract most significant point + display values
 		    if(getMaxVectorFromList(&(mainPoints[2]), &mainList)){
                 puts("Failed to acquire a point for main camera.\n");
 		    }else{
@@ -162,7 +168,7 @@ int main()
                 puts("\n\nsec P2:");
                 displayVec4(&(secPoints[2]));
 		    }
-		    //display values
+		    //suggest new capture
 		    puts("\nCapture again? [Y/N] ");
 		    k = getchar();
 		}while(k == 'y' || k == 'Y');
@@ -203,10 +209,10 @@ int main()
 				puts("Calibration data saved.");
 			}
         }
+		//suggest new calibration
 		puts("\nCalibrate again? [Y/N] ");
 		exLoop = getchar();
-	    }while(exLoop == 'y' || exLoop == 'Y');
-
+	}while(exLoop == 'y' || exLoop == 'Y');
 	//free data
 	freeCamera(&mainCam);
 	freeCamera(&secCam);
