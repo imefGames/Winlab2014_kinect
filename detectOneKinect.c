@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 	createPrimaryCamera(&mainCam, 0);
 	//get calibration values acquired by calibration program.
 	FILE* pFile = NULL;
-	pFile = fopen("calibrationValues.cal", "r");
+	pFile = fopen("calibrationValuesOne.cal", "r");
 	if(pFile == NULL){
 		puts("Could not get calibration data.");
 	}else{
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
 	unsigned int timestamp;
 	contLoop = 1;
 	//show current calibration values.
-	printf("Current calibration values:\nCeiling: %d, Floor: %d\nTransformation matrix:\n", maxZ, minZ);
+	printf("Current calibration values:\nCeiling: %d, Floor: %d\n", maxZ, minZ);
 	puts("\n\nAre those values correct? [Y/N]");
 	char tmpChar = getchar();
 	if(tmpChar == 'N' || tmpChar == 'n'){
