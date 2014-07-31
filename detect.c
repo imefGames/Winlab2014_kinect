@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 		fread(&maxZ, sizeof(int), 1, pFile);
 		fread(secCam.base, sizeof(TMatrix4D), 1, pFile);
 	}
+	fclose(pFile);
 	TVecList mainList, secList;
 	unsigned int timestamp;
 	contLoop = 1;
